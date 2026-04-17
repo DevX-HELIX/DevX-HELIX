@@ -1,0 +1,79 @@
+name: Policy Compliance Check
+on: [pull_request]
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run policy validation
+        id: policy
+        run: |
+          # Determine artifact type and content based on changed files
+          if [ -f "test_artifacts/bad_terraform.json" ]; then
+            ARTIFACT_TYPE="terraform"
+            CONTENT=$(cat test_artifacts/bad_terraform.json | jq -Rs .)
+          elif [ -f "test_artifacts/bad_k8s.yaml" ]; then
+            ARTIFACT_TYPE="kubernetes"
+            CONTENT=$(cat test_artifacts/bad_k8s.yaml | jq -Rs .)
+          else
+            echo "No test artifact found, skipping."
+            exit 0
+          fi
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST ${{ secrets.POLICY_ENGINE_URL }}/api/validate \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"type\": \"${ARTIFACT_TYPE}\",
+              \"content\": ${CONTENT},
+              \"team\": \"${{ github.repository_owner }}\",
+              \"environment\": \"staging\",
+              \"commit_sha\": \"${{ github.sha }}\",
+              \"triggered_by\": \"github-actions\"
+            }")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "============================================"
+          echo "   POLICY COMPLIANCE REPORT"
+          echo "============================================"
+          echo "$BODY" | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+          except json.JSONDecodeError:
+              print('Error: Failed to parse API response')
+              sys.exit(1)
+
+          print(f'Status: {data.get(\"status\", \"unknown\")}')
+          print()
+          if data.get('blocking_violations'):
+              print('BLOCKING VIOLATIONS:')
+              for v in data['blocking_violations']:
+                  print(f'  [{v.get(\"severity\")}] {v.get(\"policy_name\")} on {v.get(\"resource\")}')
+                  print(f'    What failed:    {v.get(\"what_failed\")}')
+                  print(f'    Why it matters: {v.get(\"why_it_matters\")}')
+                  print(f'    Fix:            {v.get(\"remediation\", \"\").strip()[:200]}')
+                  print()
+          if data.get('advisory_violations'):
+              print('ADVISORY (non-blocking):')
+              for v in data['advisory_violations']:
+                  print(f'  [{v.get(\"severity\")}] {v.get(\"policy_name\")} on {v.get(\"resource\")}')
+                  print(f'    What failed:    {v.get(\"what_failed\")}')
+                  print()
+          print(f'Summary: {data.get(\"summary\", \"\")}')
+          "
+          echo "============================================"
+
+          if [ "$HTTP_CODE" = "422" ]; then
+            echo "Deployment blocked by policy violations."
+            exit 1
+          elif [ "$HTTP_CODE" != "200" ]; then
+            echo "Policy engine returned unexpected HTTP $HTTP_CODE"
+            exit 1
+          else
+            echo "All policies passed. Deployment approved."
+          fi
