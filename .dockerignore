@@ -1,0 +1,15 @@
+.git
+.gitignore
+docs/
+*.md
+__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+node_modules
+frontend/node_modules
+.venv
+venv
+*.egg-info
+.pytest_cache

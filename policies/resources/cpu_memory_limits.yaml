@@ -1,0 +1,23 @@
+id: "POL-004"
+name: "CPU and memory limits required"
+category: "resources"
+severity: "MEDIUM"
+mode: "enforce"
+description: "Every container must define CPU and memory limits to prevent resource starvation."
+why_it_matters: "Without limits, a single container can consume all node resources, causing outages for other services."
+applies_to:
+  - "kubernetes"
+rules:
+  - field: "resources.limits"
+    required_keys:
+      - "cpu"
+      - "memory"
+remediation: |
+  Add resource limits to your container spec:
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+      requests:
+        cpu: "250m"
+        memory: "128Mi"

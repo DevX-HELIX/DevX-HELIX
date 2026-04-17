@@ -1,0 +1,16 @@
+id: "POL-006"
+name: "Minimum replica count"
+category: "resources"
+severity: "MEDIUM"
+mode: "enforce"
+description: "Deployments must run at least 2 replicas to avoid single points of failure."
+why_it_matters: "A single replica means any pod failure causes complete service downtime with no failover."
+applies_to:
+  - "kubernetes"
+rules:
+  - field: "replicas"
+    minimum: 2
+remediation: |
+  Set replicas to at least 2 in your Deployment spec:
+    spec:
+      replicas: 2

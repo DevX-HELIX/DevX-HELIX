@@ -1,0 +1,25 @@
+id: "POL-005"
+name: "Required health checks"
+category: "health"
+severity: "HIGH"
+mode: "enforce"
+description: "All services must define health checks for automatic recovery and load balancer routing."
+why_it_matters: "Without health checks, failed containers keep receiving traffic and are not automatically restarted."
+applies_to:
+  - "terraform"
+  - "kubernetes"
+  - "dockerfile"
+rules:
+  - field: "health_check"
+    must_exist: true
+remediation: |
+  Terraform: Add a health_check block to your service definition.
+  Kubernetes: Add a livenessProbe or readinessProbe:
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 5
+  Dockerfile: Add a HEALTHCHECK instruction:
+    HEALTHCHECK --interval=30s CMD curl -f http://localhost:8080/health || exit 1

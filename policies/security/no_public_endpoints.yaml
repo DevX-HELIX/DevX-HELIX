@@ -1,0 +1,20 @@
+id: "POL-002"
+name: "No public endpoints"
+category: "security"
+severity: "HIGH"
+mode: "enforce"
+description: "Services must not be directly exposed to the public internet without explicit approval."
+why_it_matters: "Public IPs expose services to the internet without firewall protection, increasing attack surface."
+applies_to:
+  - "terraform"
+  - "kubernetes"
+rules:
+  - field: "public_ip"
+    allowed_values: [false]
+  - field: "service_type"
+    blocked_values: ["LoadBalancer", "NodePort"]
+remediation: |
+  Terraform: Set assign_public_ip = false and use a private load balancer.
+  Kubernetes: Use ClusterIP service type instead of LoadBalancer or NodePort.
+    spec:
+      type: ClusterIP

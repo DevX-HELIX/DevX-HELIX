@@ -1,0 +1,23 @@
+id: "POL-008"
+name: "Blocked port exposure"
+category: "networking"
+severity: "MEDIUM"
+mode: "audit"
+description: "Certain ports (SSH, RDP, database ports) must not be exposed in container definitions."
+why_it_matters: "Exposing database or remote access ports directly creates attack vectors for unauthorized access and data exfiltration."
+applies_to:
+  - "kubernetes"
+  - "dockerfile"
+rules:
+  - field: "ports"
+    blocked_ports:
+      - 22
+      - 3389
+      - 5432
+      - 6379
+      - 27017
+remediation: |
+  Remove the blocked port from your container definition.
+  If you need database access, use a private service mesh or VPN tunnel.
+  Kubernetes: Remove the containerPort entry.
+  Dockerfile: Remove the EXPOSE directive for the blocked port.

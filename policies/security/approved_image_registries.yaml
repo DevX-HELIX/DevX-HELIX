@@ -1,0 +1,21 @@
+id: "POL-003"
+name: "Approved image registries only"
+category: "security"
+severity: "HIGH"
+mode: "enforce"
+description: "Container images must come from approved internal registries, not public Docker Hub."
+why_it_matters: "Unapproved images may contain vulnerabilities, malware, or outdated dependencies that bypass security scanning."
+applies_to:
+  - "kubernetes"
+  - "dockerfile"
+rules:
+  - field: "image"
+    approved_registries:
+      - "gcr.io/our-org"
+      - "docker.internal"
+      - "123456789.dkr.ecr.us-east-1.amazonaws.com"
+remediation: |
+  Use an image from an approved registry:
+    image: gcr.io/our-org/my-service:latest
+  Instead of:
+    image: nginx:latest

@@ -1,0 +1,25 @@
+id: "POL-001"
+name: "Mandatory resource tags"
+category: "tagging"
+severity: "HIGH"
+mode: "enforce"
+description: "All cloud resources must have owner, env, and cost-centre tags for billing attribution and audit compliance."
+why_it_matters: "Without tags, cloud costs cannot be attributed to teams and audits fail."
+applies_to:
+  - "terraform"
+  - "kubernetes"
+rules:
+  - field: "tags"
+    required_keys:
+      - "owner"
+      - "env"
+      - "cost-centre"
+remediation: |
+  Add the following to your resource block:
+    tags = { owner = "your-team", env = "staging", cost-centre = "eng-123" }
+  For Kubernetes, add labels to metadata:
+    metadata:
+      labels:
+        owner: "your-team"
+        env: "staging"
+        cost-centre: "eng-123"
