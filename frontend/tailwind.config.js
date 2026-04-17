@@ -45,20 +45,6 @@ export default {
         lg: `var(--radius)`,
         md: `calc(var(--radius) - 2px)`,
         sm: `calc(var(--radius) - 4px)`,
-      },
-      animation: {
-        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'pulse-dot': 'pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      },
-      keyframes: {
-        pulseGlow: {
-          '0%, 100%': { opacity: 1, boxShadow: '0 0 15px rgba(99,102,241,0.5)' },
-          '50%': { opacity: .8, boxShadow: '0 0 5px rgba(99,102,241,0.2)' },
-        },
-        pulseDot: {
-          '0%, 100%': { transform: 'scale(1)', opacity: 1 },
-          '50%': { transform: 'scale(1.5)', opacity: 0.5 },
-        }
       }
     },
   },

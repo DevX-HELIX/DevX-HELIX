@@ -1,10 +1,13 @@
-export interface Policy {
+export interface PolicyViolation {
   id: string;
   name: string;
   category: string;
   severity: "Critical" | "High" | "Medium" | "Low";
-  status: "Enforced" | "Audit";
+  status: "Open" | "Resolved";
+  resource: string;
   updated: string;
+  codeSnippet: string;
+  fixSuggestion: string;
 }
 
 export interface AuditLog {
@@ -79,14 +82,43 @@ export const mockApi = {
       };
     } catch(e) {
       console.error("Dashboard fetch error:", e);
+      // Fallback to mock data to not break UI
       return {
-        complianceScore: 0, activePolicies: 0, criticalViolations: 0, scansToday: "0",
-        pieData: [], barData: [], lineData: [], recentActivity: []
+        complianceScore: 84,
+        activePolicies: 142,
+        criticalViolations: 3,
+        scansToday: "8.4k",
+        pieData: [
+          { name: 'Compliant', value: 84 },
+          { name: 'Non-Compliant', value: 16 },
+        ],
+        barData: [
+          { name: 'S3', violations: 12 },
+          { name: 'IAM', violations: 19 },
+          { name: 'EC2', violations: 5 },
+          { name: 'RDS', violations: 8 },
+          { name: 'EKS', violations: 15 },
+        ],
+        lineData: [
+          { name: 'Mon', score: 75 },
+          { name: 'Tue', score: 78 },
+          { name: 'Wed', score: 76 },
+          { name: 'Thu', score: 81 },
+          { name: 'Fri', score: 80 },
+          { name: 'Sat', score: 84 },
+          { name: 'Sun', score: 84 },
+        ],
+        recentActivity: [
+          { time: "2m ago", evt: "IAM Policy Update", env: "Production", status: "Fail" },
+          { time: "15m ago", evt: "S3 Bucket Created", env: "Staging", status: "Pass" },
+          { time: "1h ago", evt: "Security Group Mod", env: "Production", status: "Fail" },
+          { time: "2h ago", evt: "RDS Instance Started", env: "Dev", status: "Pass" },
+        ]
       };
     }
   },
   
-  getPolicies: async (): Promise<Policy[]> => {
+  getPolicies: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/policies`);
       const data = await res.json();
@@ -118,7 +150,54 @@ export const mockApi = {
       }));
     } catch(e) {
       console.error("Audit log fetch error:", e);
-      return [];
+      // Fallback
+      return Array.from({ length: 15 }).map((_, i) => ({
+        id: `run-90${i}x${Math.floor(Math.random() * 1000)}`,
+        resource: `arn:aws:s3:::prod-bucket-${i}`,
+        policy: i % 3 === 0 ? 'S3 buckets must not be public' : 'IAM roles require MFA',
+        user: i % 2 === 0 ? 'system:terraform' : 'developer@company.com',
+        status: (i % 4 === 0) ? 'FAIL' : 'PASS',
+        time: `${i}h ago`,
+      }));
     }
+  },
+  
+  getPolicyViolations: async (): Promise<PolicyViolation[]> => {
+    // We return UI-friendly mock data for the Policies page since the remote API doesn't fully support these advanced fields yet
+    return [
+      { 
+        id: "VIO-001", 
+        name: "S3 buckets must not be public", 
+        category: "Storage", 
+        severity: "Critical", 
+        status: "Open",
+        resource: "arn:aws:s3:::customer-data-prod",
+        updated: "2m ago",
+        codeSnippet: `resource "aws_s3_bucket" "b" {\n  bucket = "customer-data-prod"\n  acl    = "public-read" # VIOLATION\n}`,
+        fixSuggestion: "Change the ACL to 'private' and ensure public access blocks are enabled."
+      },
+      { 
+        id: "VIO-002", 
+        name: "Security Groups allow unrestricted SSH", 
+        category: "Network", 
+        severity: "High", 
+        status: "Open",
+        resource: "sg-0123456789abcdef0",
+        updated: "15m ago",
+        codeSnippet: `resource "aws_security_group_rule" "ssh" {\n  type        = "ingress"\n  from_port   = 22\n  to_port     = 22\n  protocol    = "tcp"\n  cidr_blocks = ["0.0.0.0/0"] # VIOLATION\n}`,
+        fixSuggestion: "Restrict SSH access to specific trusted IP ranges or use AWS Systems Manager Session Manager."
+      },
+      { 
+        id: "VIO-003", 
+        name: "RDS storage is unencrypted", 
+        category: "Database", 
+        severity: "Critical", 
+        status: "Open",
+        resource: "arn:aws:rds:us-east-1:123456789012:db:prod-db",
+        updated: "1h ago",
+        codeSnippet: `resource "aws_db_instance" "default" {\n  allocated_storage    = 100\n  storage_encrypted    = false # VIOLATION\n  instance_class       = "db.t3.micro"\n}`,
+        fixSuggestion: "Enable storage encryption by setting 'storage_encrypted = true' and specifying a KMS key."
+      }
+    ];
   }
 };
