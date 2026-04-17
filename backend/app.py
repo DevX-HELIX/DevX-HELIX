@@ -1,5 +1,5 @@
 """
-DevX-HELIX Policy-as-Code Validation Engine
+PolicyOps Policy-as-Code Validation Engine
 Flask entry point — registers blueprints, connects MongoDB, serves frontend.
 """
 
@@ -21,6 +21,10 @@ if MONGODB_URI:
     try:
         client = MongoClient(MONGODB_URI)
         db = client.policydb
+        if db is not None:
+            db.policy_runs.create_index([("timestamp", -1)])
+            db.policy_runs.create_index([("team", 1), ("status", 1)])
+            db.policies.create_index([("policy_id", 1)], unique=True)
         print("✅ Connected to MongoDB Atlas")
     except Exception as e:
         print(f"⚠️  MongoDB connection failed: {e}")
@@ -63,11 +67,11 @@ def serve_frontend(path):
     index_path = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_path):
         return send_from_directory(FRONTEND_DIR, "index.html")
-    return jsonify({"message": "DevX-HELIX API is running. Frontend not built yet."}), 200
+    return jsonify({"message": "PolicyOps API is running. Frontend not built yet."}), 200
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("FLASK_ENV", "production") != "production"
-    print(f"🚀 DevX-HELIX starting on port {port}")
+    print(f"🚀 PolicyOps starting on port {port}")
     app.run(host="0.0.0.0", port=port, debug=debug)

@@ -10,7 +10,7 @@ applies_to:
   - "kubernetes"
 rules:
   - field: "tags"
-    required_keys:
+    required_tags:
       - "owner"
       - "env"
       - "cost-centre"

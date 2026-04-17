@@ -1,52 +1,87 @@
-from flask import Blueprint, jsonify, request
-from engine.policy_loader import load_all_policies
-import os
-import glob
-import yaml
+"""
+policies.py
+GET  /api/policies             — list all policies with current mode from MongoDB
+PATCH /api/policies/<id>/mode  — toggle mode, persists to MongoDB (not YAML)
+"""
 
-policies_bp = Blueprint('policies', __name__)
+from flask import Blueprint, request, jsonify
+from engine.policy_loader import load_all_policies
+from datetime import datetime, timezone
+
+policies_bp = Blueprint("policies", __name__)
+
+
+def _get_db():
+    from app import db
+    return db
+
+
+def _ensure_policies_seeded(db):
+    """
+    On first call, seed the policies collection from YAML files.
+    This runs only when the collection is empty.
+    """
+    if db is None:
+        return
+    if db.policies.count_documents({}) == 0:
+        yaml_policies = load_all_policies()
+        for p in yaml_policies:
+            db.policies.update_one(
+                {"policy_id": p["id"]},
+                {"$setOnInsert": {
+                    "policy_id":       p["id"],
+                    "name":            p.get("name"),
+                    "category":        p.get("category"),
+                    "severity":        p.get("severity"),
+                    "mode":            p.get("mode", "audit"),
+                    "enabled":         True,
+                    "description":     p.get("description"),
+                    "applies_to":      p.get("applies_to", []),
+                    "why_it_matters":  p.get("why_it_matters"),
+                    "remediation":     p.get("remediation"),
+                    "last_modified_at": datetime.now(timezone.utc),
+                }},
+                upsert=True,
+            )
+
 
 @policies_bp.route("/api/policies", methods=["GET"])
 def get_policies():
-    policies = load_all_policies()
-    return jsonify(policies), 200
+    db = _get_db()
+    _ensure_policies_seeded(db)
+
+    if db is None:
+        # Fallback: return from YAML if no DB
+        return jsonify(load_all_policies()), 200
+
+    docs = list(db.policies.find({}, {"_id": 0}))
+    return jsonify(docs), 200
+
 
 @policies_bp.route("/api/policies/<policy_id>/mode", methods=["PATCH"])
 def update_policy_mode(policy_id):
-    data = request.json or {}
+    db = _get_db()
+    data     = request.json or {}
     new_mode = data.get("mode")
-    if new_mode not in ["enforce", "audit"]:
-        return jsonify({"error": "Invalid mode. Must be 'enforce' or 'audit'"}), 400
 
-    policies_path = os.environ.get("POLICIES_PATH", "./policies")
-    if not os.path.isdir(policies_path):
-        possible_path = os.path.join(os.path.dirname(__file__), "..", "..", "policies")
-        if os.path.isdir(possible_path):
-            policies_path = possible_path
+    if new_mode not in ("enforce", "audit"):
+        return jsonify({"error": "mode must be 'enforce' or 'audit'"}), 400
 
-    pattern = os.path.join(policies_path, "**", "*.yaml")
-    policy_files = glob.glob(pattern, recursive=True)
+    if db is None:
+        return jsonify({"error": "No database connection"}), 500
 
-    target_file = None
-    target_data = None
+    _ensure_policies_seeded(db)
 
-    for filepath in policy_files:
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                p_data = yaml.safe_load(f)
-            if p_data and isinstance(p_data, dict) and p_data.get("id") == policy_id:
-                target_file = filepath
-                target_data = p_data
-                break
-        except Exception:
-            continue
-            
-    if not target_file:
-        return jsonify({"error": "Policy not found"}), 404
+    result = db.policies.update_one(
+        {"policy_id": policy_id},
+        {"$set": {
+            "mode":            new_mode,
+            "last_modified_at": datetime.now(timezone.utc),
+        }}
+    )
 
-    target_data["mode"] = new_mode
+    if result.matched_count == 0:
+        return jsonify({"error": f"Policy {policy_id} not found"}), 404
 
-    with open(target_file, "w", encoding="utf-8") as f:
-        yaml.safe_dump(target_data, f, default_flow_style=False, sort_keys=False)
-
-    return jsonify({"message": f"Updated {policy_id} mode to {new_mode}"}), 200
+    updated = db.policies.find_one({"policy_id": policy_id}, {"_id": 0})
+    return jsonify(updated), 200
