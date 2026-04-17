@@ -93,7 +93,7 @@ export default function GlobalLayout() {
           {/* Live backend indicator */}
           <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[10px] font-semibold text-emerald-700">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Backend · {window.location.host}
+            Backend · Live
           </div>
 
           {/* Notifications */}

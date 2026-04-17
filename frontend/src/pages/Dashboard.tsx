@@ -23,9 +23,9 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const STATUS_COLORS = {
-  PASSED:   "#10b981",
+  PASSED: "#10b981",
   ADVISORY: "#f59e0b",
-  BLOCKED:  "#ef4444",
+  BLOCKED: "#ef4444",
 };
 
 const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444"];
@@ -88,10 +88,10 @@ export default function Dashboard() {
   const pieData = isFirstRun
     ? [{ name: "No data", value: 1 }]
     : [
-        { name: "Passed",   value: passedCount },
-        { name: "Advisory", value: data.advisory_count },
-        { name: "Blocked",  value: data.blocked_count },
-      ].filter((d) => d.value > 0);
+      { name: "Passed", value: passedCount },
+      { name: "Advisory", value: data.advisory_count },
+      { name: "Blocked", value: data.blocked_count },
+    ].filter((d) => d.value > 0);
 
   const barData = (data.top_violations ?? []).map((v) => ({
     name: (v.policy_name ?? "Unknown").substring(0, 22),
@@ -110,7 +110,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Compliance Overview</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Policy-as-Code governance metrics across all validation runs.
+            Policy-as-Code metrics across all validation runs.
             {lastUpdated && (
               <span className="ml-2 text-slate-400">
                 Updated {lastUpdated.toLocaleTimeString()}
@@ -203,9 +203,9 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: "Passed",   count: passedCount,           color: "bg-emerald-500" },
-                    { label: "Advisory", count: data.advisory_count,   color: "bg-amber-500" },
-                    { label: "Blocked",  count: data.blocked_count,    color: "bg-red-500" },
+                    { label: "Passed", count: passedCount, color: "bg-emerald-500" },
+                    { label: "Advisory", count: data.advisory_count, color: "bg-amber-500" },
+                    { label: "Blocked", count: data.blocked_count, color: "bg-red-500" },
                   ].map(({ label, count, color }) => (
                     <div key={label} className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${color}`} />
