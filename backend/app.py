@@ -25,12 +25,12 @@ if MONGODB_URI:
             db.policy_runs.create_index([("timestamp", -1)])
             db.policy_runs.create_index([("team", 1), ("status", 1)])
             db.policies.create_index([("policy_id", 1)], unique=True)
-        print("✅ Connected to MongoDB Atlas")
+        print("Connected to MongoDB Atlas")
     except Exception as e:
-        print(f"⚠️  MongoDB connection failed: {e}")
+        print(f"MongoDB connection failed: {e}")
         print("   Running without database — audit logging disabled")
 else:
-    print("⚠️  No MONGODB_URI set — running without database")
+    print("No MONGODB_URI set — running without database")
 
 
 # ── Health Check ──
@@ -73,5 +73,5 @@ def serve_frontend(path):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     debug = os.environ.get("FLASK_ENV", "production") != "production"
-    print(f"🚀 PolicyOps starting on port {port}")
+    print(f"PolicyOps starting on port {port}")
     app.run(host="0.0.0.0", port=port, debug=debug)
