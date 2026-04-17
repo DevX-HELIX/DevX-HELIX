@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: web
+          image: nginx:latest
+          ports:
+            - containerPort: 8080
+            - containerPort: 22
+          env:
+            - name: API_KEY
+              value: "sk-abc123secretkey456"
+            - name: DB_PASSWORD
+              value: "p@ssw0rd!"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080

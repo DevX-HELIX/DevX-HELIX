@@ -1,0 +1,18 @@
+{
+  "resource_changes": [
+    {
+      "type": "aws_ecs_service",
+      "name": "api-service",
+      "change": {
+        "after": {
+          "tags": {"owner": "platform-team", "env": "staging", "cost-centre": "eng-42"},
+          "assign_public_ip": false,
+          "health_check": {"path": "/health", "interval": 30},
+          "environment": [
+            {"name": "LOG_LEVEL", "value": "info"}
+          ]
+        }
+      }
+    }
+  ]
+}

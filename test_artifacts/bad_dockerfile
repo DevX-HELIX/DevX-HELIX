@@ -1,0 +1,8 @@
+FROM ubuntu:20.04
+ENV DB_PASSWORD=mysecretpassword
+ENV API_TOKEN=eyJhbGciOiJIUzI1NiJ9
+EXPOSE 8080
+EXPOSE 22
+EXPOSE 5432
+RUN apt-get update && apt-get install -y curl
+CMD ["python", "app.py"]

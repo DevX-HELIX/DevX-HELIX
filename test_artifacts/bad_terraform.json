@@ -1,0 +1,29 @@
+{
+  "resource_changes": [
+    {
+      "type": "aws_ecs_service",
+      "name": "api-service",
+      "change": {
+        "after": {
+          "tags": {},
+          "assign_public_ip": true,
+          "health_check": null,
+          "environment": [
+            {"name": "DB_PASSWORD", "value": "supersecret123"}
+          ]
+        }
+      }
+    },
+    {
+      "type": "aws_lb",
+      "name": "public-lb",
+      "change": {
+        "after": {
+          "tags": {"env": "prod"},
+          "assign_public_ip": true,
+          "health_check": {"path": "/health", "interval": 30}
+        }
+      }
+    }
+  ]
+}
